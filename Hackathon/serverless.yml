@@ -1,0 +1,135 @@
+service: Hackathon
+plugins:
+  - serverless-offline
+custom:
+  tableName: 'furniture-table-${sls:stage}'
+
+frameworkVersion: '3'
+
+#
+# provider
+#
+provider: 
+  name: aws
+  runtime: nodejs14.x
+  region: ap-south-1
+  profile: iamUser
+  httpApi:
+    cors: true
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [ FurnitureTable, Arn ]
+  environment:
+    FURNITURE_TABLE: ${self:custom.tableName}
+
+#
+# Functions
+#
+
+functions:
+
+  
+  getRoomById:
+    handler: src/rooms/index.getRoomById
+    events:
+      - httpApi: 
+          method: GET
+          path: /rooms/{id}
+          
+  
+  getAllTheChairs:
+    handler: src/chairs/index.getAllTheChairs
+    events:
+      - httpApi: 
+          method: GET
+          path: /chairs
+
+  getChairsByRoom:
+    handler: src/chairs/index.getChairsByRoom
+    events:
+      - httpApi: 
+          method: GET
+          path: /chairsinroom
+
+  getAllRooms:
+    handler: src/rooms/index.getAllRooms
+    events:
+      - httpApi: 
+          method: GET
+          path: /rooms
+
+  getChairsById:
+    handler: src/rooms/index.getChairsById
+    events:
+      - httpApi: 
+          method: GET
+          path: /chairs/{id}
+
+  postNewRoom:
+    handler: src/rooms/index.PostNewRoom
+    events:
+      - httpApi: 
+          method: POST
+          path: /rooms
+
+  postChair:
+    handler: src/chairs/index.postChair
+    events:
+      - httpApi: 
+          method: POST
+          path: /chairs
+
+
+  postChairsByRoom:
+    handler: src/chairs/index.postChairsByRoom
+    events:
+      - httpApi: 
+          method: POST
+          path: /
+
+  putChair:
+    handler: src/chairs/index.putChair
+    events:
+      - httpApi: 
+          method: PUT
+          path: /
+
+  deleteChairById:
+    handler: src/chairs/index.deleteChairById
+    events:
+      - httpApi:
+          method: DELETE
+          path: /
+
+#
+# Resources
+#
+
+resources:
+  Resources:
+    FurnitureTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName}
